@@ -28,6 +28,19 @@
 	(rb_insert(rbt, data, isNew))
 #endif
 
+/*
+ * Some PostgreSQL-compatible distributions added an rbt_fixfunc callback
+ * parameter to rbt_create() (between freefunc and arg).  Provide a compat
+ * wrapper that passes NULL for fixfunc, which RUM does not need.
+ */
+#ifdef HAVE_RBT_FIXFUNC
+#define rum_rbt_create(node_size, comparator, combiner, allocfunc, freefunc, arg) \
+	rbt_create(node_size, comparator, combiner, allocfunc, freefunc, NULL, arg)
+#else
+#define rum_rbt_create(node_size, comparator, combiner, allocfunc, freefunc, arg) \
+	rbt_create(node_size, comparator, combiner, allocfunc, freefunc, arg)
+#endif
+
 
 /* Combiner function for rbtree.c */
 static void
@@ -115,12 +128,12 @@ rumInitBA(BuildAccumulator *accum)
 	accum->allocatedMemory = 0;
 	accum->entryallocator = NULL;
 	accum->eas_used = 0;
-	accum->tree = rbt_create(sizeof(RumEntryAccumulator),
-							 cmpEntryAccumulator,
-							 rumCombineData,
-							 rumAllocEntryAccumulator,
-							 NULL,		/* no freefunc needed */
-							 (void *) accum);
+	accum->tree = rum_rbt_create(sizeof(RumEntryAccumulator),
+								 cmpEntryAccumulator,
+								 rumCombineData,
+								 rumAllocEntryAccumulator,
+								 NULL,		/* no freefunc needed */
+								 (void *) accum);
 }
 
 /*

@@ -45,6 +45,14 @@ include $(top_builddir)/src/Makefile.global
 include $(top_srcdir)/contrib/contrib-global.mk
 endif
 
+# Detect if rbt_create() accepts an rbt_fixfunc callback parameter
+# (present in some PostgreSQL-compatible distributions).
+INCLUDEDIR_SERVER := $(shell $(PG_CONFIG) --includedir-server)
+HAS_RBT_FIXFUNC := $(shell grep -q rbt_fixfunc "$(INCLUDEDIR_SERVER)/lib/rbtree.h" 2>/dev/null && echo yes)
+ifeq ($(HAS_RBT_FIXFUNC),yes)
+override CPPFLAGS += -DHAVE_RBT_FIXFUNC
+endif
+
 $(EXTENSION)--$(EXTVERSION).sql: rum_init.sql
 	cat $^ > $@
 
